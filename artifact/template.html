@@ -1,0 +1,646 @@
+<meta charset="UTF-8">
+<title>Feuille de Match — Analytics football sur données réelles</title>
+<style>
+@font-face { font-family: "Big Shoulders"; src: url(data:font/ttf;base64,__FONT_BS_BOLD__) format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Work Sans"; src: url(data:font/ttf;base64,__FONT_WS_REG__) format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Work Sans"; src: url(data:font/ttf;base64,__FONT_WS_BOLD__) format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Red Hat Mono"; src: url(data:font/ttf;base64,__FONT_RHM_REG__) format("truetype"); font-weight: 400; font-display: swap; }
+
+:root {
+  --ink: #101c17;
+  --ink-soft: #4c5c54;
+  --paper: #eef2ec;
+  --panel: #ffffff;
+  --line: #d6ddd6;
+  --turf: #1c6b45;
+  --turf-deep: #0f4630;
+  --chalk: #f6faf3;
+  --gold: #b9791c;
+  --gold-ink: #6b4a10;
+  --brick: #a8402f;
+  --brick-bg: #f7e9e5;
+  --gold-bg: #f7ecd8;
+  --shadow: 0 1px 2px rgba(16, 28, 23, 0.06);
+  --radius: 3px;
+  --home-tint: #2f6fb0;
+  --away-tint: #a8402f;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #eef2ec;
+    --ink-soft: #a9b8ae;
+    --paper: #0d1512;
+    --panel: #131f1a;
+    --line: #263731;
+    --turf: #3a9c6b;
+    --turf-deep: #1c6b45;
+    --chalk: #0d1512;
+    --gold: #e3b053;
+    --gold-ink: #f6d999;
+    --brick: #e2695a;
+    --brick-bg: #2c1815;
+    --gold-bg: #2b220f;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --home-tint: #6fa8e0;
+    --away-tint: #e2695a;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #eef2ec; --ink-soft: #a9b8ae; --paper: #0d1512; --panel: #131f1a;
+  --line: #263731; --turf: #3a9c6b; --turf-deep: #1c6b45; --chalk: #0d1512;
+  --gold: #e3b053; --gold-ink: #f6d999; --brick: #e2695a; --brick-bg: #2c1815;
+  --gold-bg: #2b220f; --shadow: 0 1px 3px rgba(0,0,0,.4); --home-tint: #6fa8e0; --away-tint: #e2695a;
+}
+:root[data-theme="light"] {
+  --ink: #101c17; --ink-soft: #4c5c54; --paper: #eef2ec; --panel: #ffffff;
+  --line: #d6ddd6; --turf: #1c6b45; --turf-deep: #0f4630; --chalk: #f6faf3;
+  --gold: #b9791c; --gold-ink: #6b4a10; --brick: #a8402f; --brick-bg: #f7e9e5;
+  --gold-bg: #f7ecd8; --shadow: 0 1px 2px rgba(16,28,23,.06); --home-tint: #2f6fb0; --away-tint: #a8402f;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Work Sans", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, .num-xl, .num-lg { font-family: "Big Shoulders", system-ui, sans-serif; text-wrap: balance; }
+.mono, .tabular, table td.num, table th.num { font-family: "Red Hat Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+
+/* ---- topbar ---- */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: var(--paper);
+  border-bottom: 2px solid var(--turf);
+  padding: 10px 20px;
+  display: flex; align-items: center; gap: 18px;
+}
+.brand { display: flex; align-items: baseline; gap: 8px; cursor: pointer; }
+.brand .mark {
+  font-family: "Big Shoulders"; font-weight: 700; font-size: 22px; letter-spacing: 0.01em;
+  color: var(--turf); text-transform: uppercase;
+}
+.brand .sub { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.06em; text-transform: uppercase; display: none; }
+@media (min-width: 640px) { .brand .sub { display: inline; } }
+.nav-links { display: none; gap: 4px; font-size: 13px; }
+@media (min-width: 720px) { .nav-links { display: flex; } }
+.nav-links button {
+  background: none; border: none; color: var(--ink-soft); padding: 6px 10px; border-radius: var(--radius);
+  cursor: pointer; font-size: 13px;
+}
+.nav-links button:hover { background: var(--panel); color: var(--ink); }
+.spacer { flex: 1; }
+.search-wrap { position: relative; width: 100%; max-width: 260px; }
+.search-wrap input {
+  width: 100%; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); font-size: 13px; outline: none;
+}
+.search-wrap input:focus { border-color: var(--turf); }
+.search-results {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 320px; overflow-y: auto; z-index: 40;
+}
+.search-results button {
+  display: flex; justify-content: space-between; width: 100%; text-align: left; background: none; border: none;
+  padding: 8px 12px; font-size: 13px; cursor: pointer; color: var(--ink);
+}
+.search-results button:hover { background: var(--gold-bg); }
+.search-results .team-tag { color: var(--ink-soft); font-size: 11px; }
+
+/* ---- layout ---- */
+main { max-width: 980px; margin: 0 auto; padding: 28px 20px 80px; }
+.view-header { margin-bottom: 22px; }
+.eyebrow { font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--turf); font-weight: 600; margin: 0 0 4px; }
+.view-header h1 { font-size: 34px; font-weight: 700; margin: 0; line-height: 1.05; }
+.view-header .meta { color: var(--ink-soft); font-size: 13px; margin-top: 5px; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--turf);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+.panel > h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-soft);
+  font-family: "Work Sans"; font-weight: 600; margin: 0 0 14px; }
+
+.grid { display: grid; gap: 12px; }
+.grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
+.grid.cols-6 { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 720px) { .grid.cols-5 { grid-template-columns: repeat(2, 1fr); } .grid.cols-6 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 520px) { .grid.cols-2 { grid-template-columns: 1fr; } }
+
+.tile-link {
+  display: block; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+  padding: 14px 14px; text-align: center; cursor: pointer; transition: border-color .12s, transform .12s;
+}
+.tile-link:hover { border-color: var(--turf); transform: translateY(-1px); }
+.tile-link .t-name { font-weight: 600; font-size: 14px; }
+.tile-link .t-sub { font-size: 11px; color: var(--ink-soft); margin-top: 3px; }
+
+.stat-tile { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 8px; text-align: center; background: var(--panel); }
+.stat-tile .v { font-family: "Big Shoulders"; font-weight: 700; font-size: 26px; line-height: 1; }
+.stat-tile .l { font-size: 10.5px; color: var(--ink-soft); margin-top: 4px; text-transform: uppercase; letter-spacing: .04em; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { text-align: left; color: var(--ink-soft); font-weight: 600; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .03em; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 7px 8px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: none; }
+td.num, th.num { text-align: center; }
+tr.link-row { cursor: pointer; }
+tr.link-row:hover td { background: var(--gold-bg); }
+.table-scroll { overflow-x: auto; }
+.zone-qualify td:first-child { box-shadow: inset 3px 0 0 var(--turf); }
+.zone-relegate td:first-child { box-shadow: inset 3px 0 0 var(--brick); }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px;
+  background: var(--gold-bg); color: var(--gold-ink); font-size: 12.5px; font-weight: 600; border: 1px solid transparent; }
+.chip button { background: none; border: none; color: inherit; cursor: pointer; font-size: 13px; line-height: 1; opacity: .7; }
+.chip button:hover { opacity: 1; }
+
+.pill-btn { padding: 5px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+  color: var(--ink-soft); font-size: 12.5px; cursor: pointer; }
+.pill-btn.active { background: var(--turf); border-color: var(--turf); color: var(--chalk); }
+.pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.score-row { display: flex; align-items: center; justify-content: center; gap: 22px; text-align: center; }
+.score-row .team { font-family: "Big Shoulders"; font-weight: 700; font-size: 22px; max-width: 220px; }
+.score-row .score { font-family: "Big Shoulders"; font-weight: 700; font-size: 40px; letter-spacing: .02em; }
+.legend-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+
+.pitch-wrap svg { width: 100%; height: auto; background: var(--turf-deep); border-radius: var(--radius); display: block; }
+.shot-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--ink-soft); margin-top: 8px; }
+
+#app { min-height: 60vh; }
+.loading, .empty { color: var(--ink-soft); text-align: center; padding: 40px 0; font-size: 14px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+.lineup-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; border-bottom: 1px solid var(--line); }
+.lineup-row:last-child { border-bottom: none; }
+.lineup-row.sub { color: var(--ink-soft); }
+.lineup-row .pos { color: var(--ink-soft); font-size: 11px; }
+
+.compare-input { width: 100%; max-width: 340px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); font-size: 13px; outline: none; }
+.compare-input:focus { border-color: var(--turf); }
+.radar-wrap { display: flex; justify-content: center; }
+.compare-legend { display: flex; gap: 16px; justify-content: center; margin-top: 8px; font-size: 12.5px; flex-wrap: wrap; }
+
+footer { text-align: center; padding: 26px 20px; color: var(--ink-soft); font-size: 11.5px; border-top: 1px solid var(--line); }
+footer a { text-decoration: underline; }
+
+.about-copy { font-size: 13.5px; color: var(--ink-soft); }
+.about-copy strong { color: var(--ink); }
+.badge-note { display: inline-block; background: var(--brick-bg); color: var(--brick); font-size: 11px;
+  padding: 3px 9px; border-radius: 999px; margin-left: 8px; font-weight: 600; }
+</style>
+
+<div class="topbar">
+  <div class="brand" onclick="nav('#/')">
+    <span class="mark">Feuille de Match</span>
+    <span class="sub">Données réelles · démo autonome</span>
+  </div>
+  <nav class="nav-links">
+    <button onclick="nav('#/')">Accueil</button>
+    <button onclick="nav('#/compare/')">Comparateur</button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="search-wrap" id="search-wrap">
+    <input id="search-input" placeholder="Rechercher un joueur..." autocomplete="off" />
+    <div id="search-results" class="search-results" style="display:none"></div>
+  </div>
+</div>
+
+<main id="app"><div class="loading">Chargement des données…</div></main>
+
+<footer>
+  Données réelles : StatsBomb open-data (CC BY-NC-SA 4.0) &amp; openfootball.
+  Démo autonome hors-ligne — version complète avec API et recherche temps réel dans le dépôt du projet.
+</footer>
+
+<script id="app-data" type="application/json">__APP_DATA_JSON__</script>
+<script>
+const DATA = JSON.parse(document.getElementById('app-data').textContent);
+
+// ---------- helpers ----------
+function normalize(s) { return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+function fmt(n, d) { if (n == null) return "-"; return (typeof n === "number") ? n.toFixed(d ?? 0) : n; }
+function esc(s) { return (s==null?"":String(s)).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function nav(hash) { location.hash = hash; }
+
+const LEAGUE_NAMES = { "en.1":"Premier League", "es.1":"La Liga", "it.1":"Serie A", "de.1":"Bundesliga", "fr.1":"Ligue 1" };
+
+const byId = {
+  player: id => DATA.players.find(p => p.id === id),
+  match: id => DATA.matches.find(m => m.id === id),
+  competition: id => DATA.competitions.find(c => c.id === id),
+};
+
+// ---------- shot map (SVG) ----------
+function shotColor(outcome) {
+  if (outcome === "Goal") return "#3fae74";
+  if (outcome === "Saved" || outcome === "Saved to Post") return "#5b9bd9";
+  if (outcome === "Blocked") return "#e0a940";
+  return "#9fb3a8";
+}
+function renderShotMapSVG(shots, teamColors) {
+  const circles = shots.filter(s => s.x != null).map(s => {
+    const r = 1 + Math.sqrt(Math.max(s.xg, 0.01)) * 4.3;
+    const fill = teamColors ? (teamColors[s.team_id] || "#9fb3a8") : shotColor(s.outcome);
+    const filled = s.outcome === "Goal";
+    return `<circle cx="${s.x}" cy="${s.y}" r="${r.toFixed(2)}" fill="${filled ? fill : 'none'}" stroke="${fill}" stroke-width="0.5" opacity="0.88">
+      <title>${esc(s.player||'')} ${s.min ?? ''}' · xG ${s.xg?.toFixed(2)} · ${esc(s.outcome||'')}</title>
+    </circle>`;
+  }).join("");
+  return `<div class="pitch-wrap"><svg viewBox="0 0 120 80">
+    <rect x="0" y="0" width="120" height="80" fill="none" stroke="#f6faf3" stroke-opacity="0.5" stroke-width="0.4"/>
+    <rect x="102" y="18" width="18" height="44" fill="none" stroke="#f6faf3" stroke-opacity="0.5" stroke-width="0.3"/>
+    <rect x="114" y="30" width="6" height="20" fill="none" stroke="#f6faf3" stroke-opacity="0.5" stroke-width="0.3"/>
+    <circle cx="108" cy="40" r="0.6" fill="#f6faf3" fill-opacity="0.5"/>
+    <path d="M 96 30 A 10 10 0 0 1 96 50" fill="none" stroke="#f6faf3" stroke-opacity="0.5" stroke-width="0.3"/>
+    ${circles}
+  </svg></div>`;
+}
+
+// ---------- radar (canvas) ----------
+const RADAR_METRICS = ["goals","assists","xg","xa","shots","key_passes","passes_completed","progressive_passes","progressive_carries","dribbles_completed","tackles","interceptions","pressures","ball_recoveries"];
+const RADAR_LABELS = {goals:"Buts",assists:"Passes D.",xg:"xG",xa:"xA",shots:"Tirs",key_passes:"Passes clés",passes_completed:"Passes réussies",progressive_passes:"Passes progr.",progressive_carries:"Courses progr.",dribbles_completed:"Dribbles",tackles:"Tacles",interceptions:"Interceptions",pressures:"Pressings",ball_recoveries:"Récupérations"};
+const RADAR_COLORS = ["#2f6fb0","#a8402f","#3a9c6b","#b9791c","#7d5ba6","#5b8c8c"];
+
+function drawRadar(canvas, players) {
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height, cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 46;
+  const n = RADAR_METRICS.length;
+  ctx.clearRect(0,0,W,H);
+  const isDark = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() < '#333333';
+  const gridColor = isDark ? "rgba(238,242,236,0.18)" : "rgba(16,28,23,0.14)";
+  const textColor = isDark ? "#a9b8ae" : "#4c5c54";
+
+  const maxByMetric = {};
+  RADAR_METRICS.forEach(m => { maxByMetric[m] = Math.max(0.001, ...players.map(p => p.per90[m]||0)); });
+
+  // grid rings
+  ctx.strokeStyle = gridColor; ctx.lineWidth = 1;
+  for (let ring=1; ring<=4; ring++) {
+    ctx.beginPath();
+    for (let i=0;i<=n;i++) {
+      const a = (Math.PI*2*i/n) - Math.PI/2;
+      const rr = R*ring/4;
+      const x = cx + Math.cos(a)*rr, y = cy + Math.sin(a)*rr;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  // axes + labels
+  ctx.fillStyle = textColor; ctx.font = "11px 'Work Sans', sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  RADAR_METRICS.forEach((m,i) => {
+    const a = (Math.PI*2*i/n) - Math.PI/2;
+    const x1 = cx, y1 = cy;
+    const x2 = cx + Math.cos(a)*R, y2 = cy + Math.sin(a)*R;
+    ctx.strokeStyle = gridColor; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const lx = cx + Math.cos(a)*(R+26), ly = cy + Math.sin(a)*(R+26);
+    ctx.fillText(RADAR_LABELS[m], lx, ly);
+  });
+  // player polygons
+  players.forEach((p, pi) => {
+    const color = RADAR_COLORS[pi % RADAR_COLORS.length];
+    ctx.beginPath();
+    RADAR_METRICS.forEach((m,i) => {
+      const val = Math.min(1, (p.per90[m]||0) / maxByMetric[m]);
+      const a = (Math.PI*2*i/n) - Math.PI/2;
+      const x = cx + Math.cos(a)*R*val, y = cy + Math.sin(a)*R*val;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+    ctx.fillStyle = color + "33"; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+  });
+}
+
+// ---------- views ----------
+function setHeader(eyebrow, title, meta) {
+  return `<div class="view-header"><p class="eyebrow">${esc(eyebrow)}</p><h1>${title}</h1>${meta?`<div class="meta">${meta}</div>`:""}</div>`;
+}
+
+function viewHome() {
+  const leagueTiles = Object.keys(LEAGUE_NAMES).map(code => {
+    const s = DATA.standings[code];
+    return `<a class="tile-link" onclick="nav('#/league/${code}')"><div class="t-name">${LEAGUE_NAMES[code]}</div><div class="t-sub">${s?s.season:''}</div></a>`;
+  }).join("");
+  const compTiles = DATA.competitions.map(c => {
+    const n = DATA.matches.filter(m => m.competition_id === c.id).length;
+    return `<a class="tile-link" onclick="nav('#/competition/${c.id}')" style="text-align:left"><div class="t-name">${esc(c.name)} ${esc(c.season)}</div><div class="t-sub">${n} matchs analysés en détail →</div></a>`;
+  }).join("");
+
+  return `
+    ${setHeader("Analytics football", "Statistiques football,<br>données réelles")}
+    <div class="panel"><h2>Championnats — classements réels</h2><div class="grid cols-5">${leagueTiles}</div></div>
+    <div class="panel"><h2>Compétitions à données détaillées (xG, tirs, passes)</h2><div class="grid cols-2">${compTiles}</div></div>
+    <div class="panel"><h2>À propos de cette démo</h2>
+      <p class="about-copy">Cette page est une <strong>démo autonome</strong> : toutes les données (${DATA.players.length} joueurs, ${DATA.matches.length} matchs, ${DATA.shots.length} tirs) sont réelles et embarquées directement dans la page — pas de serveur, pas de connexion réseau requise après le chargement. Sources : <strong>StatsBomb open-data</strong> (CC BY-NC-SA 4.0) pour la Coupe du Monde 2022 et l'Euro 2024, et <strong>openfootball</strong> pour les classements des 5 grands championnats. La version complète (avec base de données vivante et API) est disponible dans le dépôt du projet.</p>
+    </div>`;
+}
+
+function viewLeague(code) {
+  const s = DATA.standings[code];
+  if (!s) return `<div class="empty">Championnat introuvable.</div>`;
+  const rows = s.rows.map((r,i) => `
+    <tr class="${i<4?'zone-qualify':(i>=s.rows.length-3?'zone-relegate':'')}">
+      <td>${r.pos}</td><td>${esc(r.team)}</td>
+      <td class="num tabular">${r.p}</td><td class="num tabular">${r.w}</td><td class="num tabular">${r.d}</td><td class="num tabular">${r.l}</td>
+      <td class="num tabular">${r.gf}</td><td class="num tabular">${r.ga}</td>
+      <td class="num tabular">${r.gd>0?'+':''}${r.gd}</td><td class="num tabular" style="font-weight:700">${r.pts}</td>
+    </tr>`).join("");
+  return `
+    ${setHeader("Championnat", s.league_name, `Saison ${s.season} · classement réel (openfootball)`)}
+    <div class="panel"><div class="table-scroll"><table>
+      <thead><tr><th>#</th><th>Équipe</th><th class="num">MJ</th><th class="num">V</th><th class="num">N</th><th class="num">D</th>
+      <th class="num">BP</th><th class="num">BC</th><th class="num">Diff</th><th class="num">Pts</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
+}
+
+function computeCompetitionStandings(compId) {
+  const matches = DATA.matches.filter(m => m.competition_id === compId && m.home.score != null);
+  const table = {};
+  matches.forEach(m => {
+    [[m.home, m.away], [m.away, m.home]].forEach(([team, opp], idx) => {
+      table[team.name] = table[team.name] || {played:0,won:0,drawn:0,lost:0,gf:0,ga:0};
+      const t = table[team.name];
+      t.played++;
+      const gf = idx===0? m.home.score : m.away.score;
+      const ga = idx===0? m.away.score : m.home.score;
+      t.gf += gf; t.ga += ga;
+      if (gf>ga) t.won++; else if (gf<ga) t.lost++; else t.drawn++;
+    });
+  });
+  const rows = Object.entries(table).map(([team,t]) => ({team, ...t, gd: t.gf-t.ga, pts: t.won*3+t.drawn}));
+  rows.sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);
+  return rows;
+}
+
+const LEADER_STATS = [["goals","Buts"],["assists","Passes décisives"],["xg","xG"],["xa","xA"],["key_passes","Passes clés"],["tackles","Tacles"]];
+function computeLeaders(compId, stat, limit=10) {
+  const matchIds = new Set(DATA.matches.filter(m => m.competition_id === compId).map(m => m.id));
+  const totals = {};
+  DATA.player_match_stats.filter(pms => matchIds.has(pms.match_id)).forEach(pms => {
+    const key = pms.pid;
+    totals[key] = totals[key] || {value:0, minutes:0, matches:0};
+    const val = stat==="goals"?pms.g:stat==="assists"?pms.a:stat==="xg"?pms.xg:stat==="xa"?pms.xa:stat==="key_passes"?pms.kp:0;
+    totals[key].value += val || 0;
+    totals[key].minutes += pms.min;
+    totals[key].matches++;
+  });
+  if (stat === "tackles") {
+    // tackles not in compact player_match_stats export -> fall back to player totals filtered by competition presence
+  }
+  let arr = Object.entries(totals).map(([pid, t]) => {
+    const p = byId.player(Number(pid));
+    return p ? {player: p, ...t} : null;
+  }).filter(Boolean);
+  arr.sort((a,b) => b.value - a.value);
+  return arr.slice(0, limit);
+}
+
+function viewCompetition(id, stat) {
+  stat = stat || "goals";
+  const comp = byId.competition(id);
+  if (!comp) return `<div class="empty">Compétition introuvable.</div>`;
+  const standings = computeCompetitionStandings(id);
+  const leaders = computeLeaders(id, stat, 10);
+  const matches = DATA.matches.filter(m => m.competition_id === id).sort((a,b) => a.date.localeCompare(b.date));
+
+  const standingsRows = standings.map((r,i) => `
+    <tr><td>${i+1}</td><td>${esc(r.team)}</td><td class="num tabular">${r.played}</td><td class="num tabular">${r.won}</td>
+    <td class="num tabular">${r.drawn}</td><td class="num tabular">${r.lost}</td><td class="num tabular">${r.gd>0?'+':''}${r.gd}</td>
+    <td class="num tabular" style="font-weight:700">${r.pts}</td></tr>`).join("");
+
+  const statPills = LEADER_STATS.map(([k,label]) => `<button class="pill-btn ${k===stat?'active':''}" onclick="nav('#/competition/${id}/${k}')">${label}</button>`).join("");
+  const leaderRows = leaders.map((l,i) => `
+    <tr class="link-row" onclick="nav('#/player/${l.player.id}')">
+      <td class="tabular" style="color:var(--ink-soft);width:24px">${i+1}</td>
+      <td>${esc(l.player.name)}</td>
+      <td class="num tabular" style="font-weight:700">${l.value.toFixed(stat==='xg'||stat==='xa'?1:0)}</td>
+    </tr>`).join("");
+
+  const matchRows = matches.map(m => `
+    <tr class="link-row" onclick="nav('#/match/${m.id}')">
+      <td style="color:var(--ink-soft);width:90px" class="tabular">${esc(m.date)}</td>
+      <td style="text-align:right">${esc(m.home.name)}</td>
+      <td class="num tabular" style="font-weight:700;width:60px">${m.home.score ?? '-'} : ${m.away.score ?? '-'}</td>
+      <td>${esc(m.away.name)}</td>
+    </tr>`).join("");
+
+  return `
+    ${setHeader("Compétition", `${esc(comp.name)} ${esc(comp.season)}`)}
+    <div class="panel"><h2>Classement (calculé à partir des résultats réels)</h2>
+      <div class="table-scroll"><table><thead><tr><th>#</th><th>Équipe</th><th class="num">MJ</th><th class="num">V</th><th class="num">N</th><th class="num">D</th><th class="num">Diff</th><th class="num">Pts</th></tr></thead>
+      <tbody>${standingsRows}</tbody></table></div>
+      <p style="font-size:11.5px;color:var(--ink-soft);margin-top:10px">Pour un tournoi à élimination directe, ce tableau reflète l'ensemble des matchs joués (groupes + phases finales).</p>
+    </div>
+    <div class="panel"><h2>Meilleurs joueurs</h2>
+      <div class="pill-row" style="margin-bottom:12px">${statPills}</div>
+      <table><tbody>${leaderRows}</tbody></table>
+    </div>
+    <div class="panel"><h2>Matchs</h2><div class="table-scroll"><table><tbody>${matchRows}</tbody></table></div></div>`;
+}
+
+function viewPlayer(id) {
+  const p = byId.player(id);
+  if (!p) return `<div class="empty">Joueur introuvable.</div>`;
+  const t = p.totals;
+  const tiles = [
+    ["Matchs", p.matches], ["Minutes", t.minutes_played], ["Buts", t.goals], ["Passes D.", t.assists],
+    ["xG", fmt(t.xg,2)], ["xA", fmt(t.xa,2)], ["Tirs", t.shots], ["Tirs cadrés", t.shots_on_target],
+    ["Passes réussies", `${t.passes_completed}/${t.passes_attempted}`], ["Passes progr.", t.progressive_passes],
+    ["Dribbles réussis", `${t.dribbles_completed}/${t.dribbles_attempted}`], ["Tacles", t.tackles],
+  ].map(([l,v]) => `<div class="stat-tile"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+
+  const shots = DATA.shots.filter(s => s.pid === id);
+  const shotMap = shots.length ? `<div class="panel"><h2>Carte des tirs</h2>${renderShotMapSVG(shots)}
+    <div class="shot-legend">
+      <span><span class="legend-dot" style="background:#3fae74"></span>But</span>
+      <span><span class="legend-dot" style="background:transparent;border:1px solid #5b9bd9"></span>Arrêté</span>
+      <span><span class="legend-dot" style="background:transparent;border:1px solid #e0a940"></span>Contré</span>
+      <span><span class="legend-dot" style="background:transparent;border:1px solid #9fb3a8"></span>Non cadré</span>
+    </div></div>` : "";
+
+  const matchLines = DATA.player_match_stats.filter(pms => pms.pid === id)
+    .map(pms => ({pms, m: byId.match(pms.match_id)})).filter(x => x.m)
+    .sort((a,b) => a.m.date.localeCompare(b.m.date));
+  const matchRows = matchLines.map(({pms, m}) => {
+    const isHome = m.home.id === pms.team_id;
+    const opp = isHome ? m.away.name : m.home.name;
+    return `<tr class="link-row" onclick="nav('#/match/${m.id}')">
+      <td class="tabular" style="color:var(--ink-soft)">${esc(m.date)}</td><td>${esc(opp)}</td>
+      <td class="tabular">${m.home.score}-${m.away.score}</td>
+      <td class="num tabular">${pms.min}</td><td class="num tabular">${pms.g}</td><td class="num tabular">${pms.a}</td>
+      <td class="num tabular">${fmt(pms.xg,2)}</td><td class="num tabular">${pms.shots}</td>
+    </tr>`;
+  }).join("");
+
+  const teamsLine = p.teams.map(tc => `${esc(tc.team)} · ${esc(tc.competition)} ${esc(tc.season)}`).join(" — ");
+
+  return `
+    ${setHeader("Joueur", esc(p.name), teamsLine)}
+    <div class="panel"><div class="grid cols-6">${tiles}</div></div>
+    ${shotMap}
+    <div class="panel"><h2>Matchs</h2><div class="table-scroll"><table>
+      <thead><tr><th>Date</th><th>Adversaire</th><th>Score</th><th class="num">Min</th><th class="num">Buts</th><th class="num">Passes D.</th><th class="num">xG</th><th class="num">Tirs</th></tr></thead>
+      <tbody>${matchRows}</tbody></table></div></div>
+    <button class="pill-btn active" onclick="nav('#/compare/${id}')">Comparer ce joueur →</button>`;
+}
+
+function viewMatch(id) {
+  const m = byId.match(id);
+  if (!m) return `<div class="empty">Match introuvable.</div>`;
+  const comp = byId.competition(m.competition_id);
+  const goalsLine = m.goals.map(g => `⚽ ${esc(g.player)} ${g.min}'`).join("  ");
+  const statsRows = m.home.stats && m.away.stats ? [
+    ["Tirs", m.home.stats.shots, m.away.stats.shots],
+    ["Tirs cadrés", m.home.stats.sot, m.away.stats.sot],
+    ["xG", fmt(m.home.stats.xg,2), fmt(m.away.stats.xg,2)],
+    ["Possession", m.home.stats.poss?`${m.home.stats.poss}%`:'-', m.away.stats.poss?`${m.away.stats.poss}%`:'-'],
+    ["Passes réussies", `${m.home.stats.passes_c}/${m.home.stats.passes_a}`, `${m.away.stats.passes_c}/${m.away.stats.passes_a}`],
+    ["PPDA (pressing)", fmt(m.home.stats.ppda,2), fmt(m.away.stats.ppda,2)],
+    ["Fautes", m.home.stats.fouls, m.away.stats.fouls],
+  ].map(([l,h,a]) => `<tr><td style="text-align:right;width:35%;font-weight:600">${h}</td><td style="text-align:center;color:var(--ink-soft)">${l}</td><td style="width:35%;font-weight:600">${a}</td></tr>`).join("") : "";
+
+  const shots = DATA.shots.filter(s => s.match_id === id);
+  const teamColors = {[m.home.id]: "var(--home-tint)".includes('var')? "#3f7cc4" : "", [m.away.id]: "#c4573f"};
+  // resolve css var colors to concrete hex for svg fill (svg can't read css vars reliably across contexts in some renderers, use fixed)
+  const fixedColors = {[m.home.id]: "#3f7cc4", [m.away.id]: "#c4573f"};
+
+  const lineupCol = (side) => side.lineup.map(l => `
+    <div class="lineup-row ${l.starter?'':'sub'}">
+      <span>${l.num?`${l.num}. `:''}${esc(l.name)}</span>
+      <span class="pos">${esc(l.pos||'')} · ${l.min}'</span>
+    </div>`).join("");
+
+  return `
+    ${setHeader("Match", `${comp?esc(comp.name)+' '+esc(comp.season):''}`, `${esc(m.date)}${m.stadium?' · '+esc(m.stadium):''}`)}
+    <div class="panel">
+      <div class="score-row">
+        <a class="team" onclick="nav('#/player/')" style="pointer-events:none">${esc(m.home.name)}</a>
+        <div class="score">${m.home.score} - ${m.away.score}</div>
+        <div class="team">${esc(m.away.name)}</div>
+      </div>
+      ${goalsLine?`<div style="text-align:center;color:var(--ink-soft);font-size:13px;margin-top:8px">${goalsLine}</div>`:""}
+    </div>
+    ${statsRows?`<div class="panel"><h2>Statistiques du match</h2><table>${statsRows}</table></div>`:""}
+    ${shots.length?`<div class="panel"><h2>Carte des tirs (les deux équipes)</h2>${renderShotMapSVG(shots, fixedColors)}
+      <div class="shot-legend">
+        <span><span class="legend-dot" style="background:#3f7cc4"></span>${esc(m.home.name)}</span>
+        <span><span class="legend-dot" style="background:#c4573f"></span>${esc(m.away.name)}</span>
+      </div></div>`:""}
+    <div class="two-col">
+      <div class="panel"><h2>${esc(m.home.name)}</h2>${lineupCol(m.home)}</div>
+      <div class="panel"><h2>${esc(m.away.name)}</h2>${lineupCol(m.away)}</div>
+    </div>`;
+}
+
+let compareIds = [];
+function viewCompare(idsStr) {
+  compareIds = (idsStr||"").split(",").filter(Boolean).map(Number);
+  return `
+    ${setHeader("Comparateur", "Comparer des joueurs", "Statistiques ramenées à 90 minutes jouées, données réelles StatsBomb.")}
+    <div class="panel">
+      <div class="search-wrap" style="max-width:340px"><input id="compare-input" class="compare-input" placeholder="Ajouter un joueur..." autocomplete="off" />
+        <div id="compare-results" class="search-results" style="display:none"></div>
+      </div>
+      <div id="compare-chips" class="pill-row" style="margin-top:12px"></div>
+    </div>
+    <div id="compare-output"></div>`;
+}
+
+function renderCompareChips() {
+  const wrap = document.getElementById("compare-chips");
+  if (!wrap) return;
+  wrap.innerHTML = compareIds.map(id => {
+    const p = byId.player(id);
+    return `<span class="chip">${esc(p?p.name:id)}<button onclick="removeCompare(${id})">✕</button></span>`;
+  }).join("");
+  renderCompareOutput();
+}
+function removeCompare(id) { compareIds = compareIds.filter(i => i!==id); nav('#/compare/'+compareIds.join(',')); renderCompareChips(); }
+function addCompare(id) {
+  if (compareIds.includes(id) || compareIds.length>=5) return;
+  compareIds.push(id);
+  nav('#/compare/'+compareIds.join(','));
+  document.getElementById("compare-input").value = "";
+  document.getElementById("compare-results").style.display = "none";
+  renderCompareChips();
+}
+function renderCompareOutput() {
+  const out = document.getElementById("compare-output");
+  if (!out) return;
+  const players = compareIds.map(byId.player).filter(Boolean);
+  if (!players.length) { out.innerHTML = ""; return; }
+  const rows = RADAR_METRICS.map(m => `<tr><td style="color:var(--ink-soft)">${RADAR_LABELS[m]}</td>${players.map(p=>`<td class="num tabular">${fmt(p.per90[m],2)}</td>`).join("")}</tr>`).join("");
+  out.innerHTML = `
+    <div class="panel"><div class="radar-wrap"><canvas id="radar-canvas" width="560" height="440"></canvas></div>
+      <div class="compare-legend">${players.map((p,i)=>`<span><span class="legend-dot" style="background:${RADAR_COLORS[i%RADAR_COLORS.length]}"></span>${esc(p.name)}</span>`).join("")}</div>
+    </div>
+    <div class="panel"><div class="table-scroll"><table><thead><tr><th>Métrique (par 90')</th>${players.map(p=>`<th class="num">${esc(p.name)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  const canvas = document.getElementById("radar-canvas");
+  if (canvas) drawRadar(canvas, players);
+}
+
+// ---------- router ----------
+function render() {
+  const hash = location.hash.replace(/^#\/?/, "");
+  const parts = hash.split("/").filter(Boolean);
+  const app = document.getElementById("app");
+  if (parts.length === 0) { app.innerHTML = viewHome(); return; }
+  if (parts[0] === "league") { app.innerHTML = viewLeague(parts[1]); return; }
+  if (parts[0] === "competition") { app.innerHTML = viewCompetition(Number(parts[1]), parts[2]); return; }
+  if (parts[0] === "player") { app.innerHTML = viewPlayer(Number(parts[1])); return; }
+  if (parts[0] === "match") { app.innerHTML = viewMatch(Number(parts[1])); return; }
+  if (parts[0] === "compare") { app.innerHTML = viewCompare(parts[1]); renderCompareChips(); wireCompareSearch(); return; }
+  app.innerHTML = `<div class="empty">Page introuvable.</div>`;
+}
+window.addEventListener("hashchange", render);
+
+// ---------- search (topbar) ----------
+function wireSearch() {
+  const input = document.getElementById("search-input");
+  const results = document.getElementById("search-results");
+  input.addEventListener("input", () => {
+    const q = normalize(input.value);
+    if (q.length < 2) { results.style.display = "none"; return; }
+    const matches = DATA.players.filter(p => normalize(p.name).includes(q)).slice(0, 8);
+    if (!matches.length) { results.style.display = "none"; return; }
+    results.innerHTML = matches.map(p => `<button onclick="nav('#/player/${p.id}'); document.getElementById('search-results').style.display='none'; document.getElementById('search-input').value='';">${esc(p.name)}<span class="team-tag">${esc(p.teams[0]?.team||'')}</span></button>`).join("");
+    results.style.display = "block";
+  });
+  document.addEventListener("click", e => { if (!document.getElementById("search-wrap").contains(e.target)) results.style.display = "none"; });
+}
+function wireCompareSearch() {
+  const input = document.getElementById("compare-input");
+  const results = document.getElementById("compare-results");
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const q = normalize(input.value);
+    if (q.length < 2) { results.style.display = "none"; return; }
+    const matches = DATA.players.filter(p => normalize(p.name).includes(q)).slice(0, 8);
+    if (!matches.length) { results.style.display = "none"; return; }
+    results.innerHTML = matches.map(p => `<button onclick="addCompare(${p.id})">${esc(p.name)}<span class="team-tag">${esc(p.teams[0]?.team||'')}</span></button>`).join("");
+    results.style.display = "block";
+  });
+}
+
+wireSearch();
+render();
+</script>
