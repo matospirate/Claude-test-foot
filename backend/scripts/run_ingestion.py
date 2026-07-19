@@ -2,6 +2,11 @@
 
 Usage: python scripts/run_ingestion.py
 """
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from app.ingestion.statsbomb_ingest import ingest_competition_season
 from app.ingestion.openfootball_ingest import ingest_all as ingest_openfootball_all
 
